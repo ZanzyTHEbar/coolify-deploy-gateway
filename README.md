@@ -27,12 +27,14 @@ Use a Coolify API token with `deploy` permission only. The HTTP opt-in is requir
 
 ## Deployment
 
-Create a separate Coolify Docker Compose application from this repository. Use Compose location `/docker-compose.yaml`, expose no host port, assign the gateway service a private Coolify domain, and attach the existing private network shared with Newt so it can resolve `coolify-deploy-gateway:8080`. Public ingress must target Coolify's HTTPS reverse proxy with the gateway domain as both SNI and Host header; do not target the container port directly.
+Create a separate Coolify Docker Compose application from this repository. Use Compose location `/docker-compose.yaml`, expose no host port, assign the gateway service a private Coolify domain. 
+
+I use Pangolin and Newt, if you do too attach the existing private network shared with Newt so it can resolve `coolify-deploy-gateway:8080`. Public ingress must target Coolify's HTTPS reverse proxy with the gateway domain as both SNI and Host header; do not target the container port directly.
 
 Enable Coolify API access and allow only the source address observed for this gateway's private-network requests. Verify the source in Coolify logs before setting the allowlist; never allow the public ingress address. Use one unique high-entropy webhook secret per target. Payloads are capped at 1 MiB. The in-process replay window is ten minutes; keep one gateway replica and treat deployment delivery as at-least-once across restarts.
 
-Configure Pangolin/Newt to route only `deploy.zacariahheim.com` and the path `/webhooks/source/github/manual` to `http://coolify-deploy-gateway:8080` without stripping the path. GitHub's payload URL is:
+Configure Pangolin/Newt to route only your root domain and the path `/webhooks/source/github/manual` to some the internal reverse proxy without stripping the path. GitHub's payload URL becomes:
 
 ```text
-https://deploy.zacariahheim.com/webhooks/source/github/manual?uuid=<resource-uuid>&force=false
+https://<public_root_domain>/webhooks/source/github/manual?uuid=<resource-uuid>
 ```
